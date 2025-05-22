@@ -111,12 +111,4 @@ ssh -i key-2.pem ec2-user@<Server1-IP>
 
 ---
 
-##  Contributors
 
-* Your Name
-
----
-
-##  Date
-
-22 May 2025
