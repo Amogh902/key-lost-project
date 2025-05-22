@@ -5,8 +5,7 @@
 This project documents the process of regaining SSH access to an EC2 instance (Server1) after losing its private key, by using a new key pair and a temporary EC2 instance (Server2).
 
 ---
-## Architecture of project
-![](./img/archi-1.png) 
+![](/img/archi-1.png)
 
 ##  Problem
 
@@ -36,10 +35,12 @@ This project documents the process of regaining SSH access to an EC2 instance (S
 * Create a new key pair: `key-2.pem`
 * Launch a new EC2 instance (Server2) with this key.
 
+
 ### 2. Detach & Attach Volumes
 
 * Detach root EBS from Server1.
 * Attach it to Server2 as `/dev/xvdb`.
+
 
 ### 3. Mount the Volume
 
@@ -48,24 +49,27 @@ sudo mkdir /mnt/server1
 sudo mount -o nouuid -t xfs /dev/xvdb1 /mnt/server1
 ```
 
+> We used `-o nouuid` because both Server1 and Server2 volumes had the same UUID, which would normally prevent mounting.
+
+![Mount command](/img/mounting-2.png)
+
 ### 4. Copy the Public Key
 
-* Best practice: copy from `/home/ec2-user/.ssh/authorized_keys` of Server2.
-* Avoid using `/root/.ssh/authorized_keys` because it may contain restrictions like:
-
-  ```
-  command="echo 'Please login as the user \"ec2-user\"'; ..."
-  ```
+* Copy from `/home/ec2-user/.ssh/authorized_keys` of Server2.
 * Paste the copied public key into:
 
   ```
   /mnt/server1/home/ec2-user/.ssh/authorized_keys
   ```
 
+![Update authorized\_keys](/img/copyingkey-3.png)
+
 ### 5. Cleanup and Reattach
 
 * Detach Server1's volume from Server2.
 * Reattach it to Server1 as the root volume.
+
+![](/img/umounting-4.png)
 
 ### 6. SSH Into Server1
 
@@ -73,42 +77,13 @@ sudo mount -o nouuid -t xfs /dev/xvdb1 /mnt/server1
 ssh -i key-2.pem ec2-user@<Server1-IP>
 ```
 
+![SSH success](/img/successful-login-5.png)
+
+You should now have access.
+
 ---
 
 ##  Key Takeaways
 
-* EC2 only injects SSH keys at instance launch.
-* Public key is stored at `~/.ssh/authorized_keys` on the instance.
-* Manual key update is required for recovery.
-* Avoid using keys with command restrictions.
-
----
-
-##  Screenshots / Images
-
-(Add relevant screenshots below)
-
-### Mount Volume Command
-
-![Mount Volume](screenshots/mount_volume.png)
-
-### Authorized Keys Update
-
-![Authorized Keys](screenshots/update_keys.png)
-
-### SSH Success
-
-![SSH Login](screenshots/ssh_success.png)
-
----
-
-
-##  Additional Notes
-
-* Always back up your key pairs securely.
-* Avoid editing `authorized_keys` as `root` unless absolutely necessary.
-* Use correct mount flags to prevent UUID issues.
-
----
-
-
+* Before detaching EBS of server1 make sure it is stopped or else EBS may get corrupted 
+* Public key is stored at `~/.ssh/authorized_keys` on the instance
